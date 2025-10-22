@@ -24,7 +24,7 @@ plugins:
       # Initialization is skipped automatically if a valid refresh token is supplied. Leave this commented if you're
       # completing the OAuth flow for the first time/do not have a refresh token.
       # skipInitialization: true
-      
+
     clients:
       - MUSIC
       - ANDROID_VR
@@ -116,7 +116,7 @@ plugins:
       recommendationsLoadLimit: 10 # Number of tracks
 lavalink:
   plugins:
-    - dependency: "dev.lavalink.youtube:youtube-plugin:1.15.0" # Please check the latest version at https://github.com/lavalink-devs/youtube-source/releases
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.14.0" # Please check the latest version at https://github.com/lavalink-devs/youtube-source/releases
       snapshot: false
     - dependency: "com.github.topi314.lavasrc:lavasrc-plugin:4.8.1" # Please check the latest version at https://github.com/topi314/LavaSrc/releases
       snapshot: false
