@@ -1,0 +1,3 @@
+music.caikovsky.cloud {
+  reverse_proxy vocard-dashboard:8000
+}
