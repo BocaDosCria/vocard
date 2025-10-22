@@ -11,6 +11,20 @@ plugins:
     allowDirectPlaylistIds: true # Whether just playlist IDs can match. If false, only complete URLs will be loaded.
     # The clients to use for track loading. See below for a list of valid clients.
     # Clients are queried in the order they are given (so the first client is queried first and so on...)
+    oauth:
+      # setting "enabled: true" is the bare minimum to get OAuth working.
+      enabled: true
+
+      # if you have a refresh token, you may set it below (make sure to uncomment the line to apply it).
+      # setting a valid refresh token will skip the OAuth flow entirely. See above note on how to retrieve
+      # your refreshToken.
+      # refreshToken: "paste your refresh token here if applicable"
+
+      # Set this if you don't want the OAuth flow to be triggered, if you intend to supply a refresh token later.
+      # Initialization is skipped automatically if a valid refresh token is supplied. Leave this commented if you're
+      # completing the OAuth flow for the first time/do not have a refresh token.
+      # skipInitialization: true
+      
     clients:
       - MUSIC
       - ANDROID_VR
