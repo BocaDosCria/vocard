@@ -89,7 +89,12 @@ services:
         restart: unless-stopped
         image: ghcr.io/chocomeow/vocard:latest
         volumes:
-            - ./settings.json:/app/settings.json
+            - type: bind
+              source: ./files/settings.json
+              target: /app/settings.json
+              read_only: true
+              bind:
+                create_host_path: false
         networks:
             - vocard
         depends_on:
