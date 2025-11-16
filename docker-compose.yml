@@ -77,7 +77,11 @@ services:
         image: ghcr.io/chocomeow/vocard-dashboard:latest
         restart: unless-stopped
         volumes:
-            - ./dashboard/settings.json:/app/settings.json
+            - type: bind
+              source: ../files/dasboard-settings.json
+              target: /app/dashboard/settings.json
+              bind:
+                create_host_path: false
         ports:
             - 8000:8000
         networks:
