@@ -92,7 +92,6 @@ services:
             - type: bind
               source: ../files/settings.json
               target: /app/settings.json
-              read_only: true
               bind:
                 create_host_path: false
         networks:
