@@ -100,18 +100,6 @@ services:
             vocard-db:
                 condition: service_healthy
 
-    caddy:
-        image: caddy:latest
-        ports:
-            - "80:80"
-            - "443:443"
-        volumes:
-            - ./Caddyfile:/etc/caddy/Caddyfile
-        depends_on:
-            - vocard-dashboard
-        networks:
-            - web
-
 networks:
     vocard:
         name: vocard
