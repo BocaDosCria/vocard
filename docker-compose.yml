@@ -90,7 +90,7 @@ services:
         image: ghcr.io/chocomeow/vocard:latest
         volumes:
             - type: bind
-              source: ./files/settings.json
+              source: ../files/settings.json
               target: /app/settings.json
               read_only: true
               bind:
