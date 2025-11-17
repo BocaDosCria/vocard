@@ -78,7 +78,7 @@ services:
         restart: unless-stopped
         volumes:
             - type: bind
-              source: ../files/dashboard-settings.json
+              source: ../files/dashboard/settings.json
               target: /app/dashboard/settings.json
               bind:
                 create_host_path: false
