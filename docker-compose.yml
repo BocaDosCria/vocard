@@ -82,7 +82,6 @@ services:
             - 8000:8000
         networks:
             - vocard
-            - web
             - dokploy-network
 
     vocard:
