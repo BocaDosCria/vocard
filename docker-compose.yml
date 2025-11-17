@@ -83,6 +83,7 @@ services:
         networks:
             - vocard
             - web
+            - dokploy-network
 
     vocard:
         container_name: vocard
@@ -109,3 +110,5 @@ networks:
         name: vocard
     web:
         name: web
+    dokploy-network:
+        external: true
