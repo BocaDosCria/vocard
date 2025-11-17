@@ -80,6 +80,7 @@ services:
             - ../files/dashboard/settings.json:/app/settings.json
         networks:
             - vocard
+            - web
             - dokploy-network
         expose:
             - "8000"
@@ -117,5 +118,7 @@ services:
 networks:
     vocard:
         name: vocard
+    web:
+        name: web
     dokploy-network:
         external: true
