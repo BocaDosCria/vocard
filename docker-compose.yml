@@ -81,6 +81,8 @@ services:
         networks:
             - vocard
             - dokploy-network
+        expose:
+            - "8000"
         labels:
             - traefik.enable=true
             - traefik.docker.network=dokploy-network
@@ -115,7 +117,5 @@ services:
 networks:
     vocard:
         name: vocard
-    web:
-        name: web
     dokploy-network:
         external: true
