@@ -76,6 +76,8 @@ services:
         container_name: vocard-dashboard
         image: ghcr.io/chocomeow/vocard-dashboard:latest
         restart: unless-stopped
+        volumes:
+            - ./dashboard/settings.json:/app/settings.json
         ports:
             - 8000:8000
         networks:
