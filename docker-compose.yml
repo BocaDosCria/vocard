@@ -78,11 +78,19 @@ services:
         restart: unless-stopped
         volumes:
             - ../files/dashboard/settings.json:/app/settings.json
-        ports:
-            - 8000:8000
         networks:
             - vocard
             - dokploy-network
+        labels:
+            - traefik.enable=true
+            - traefik.docker.network=dokploy-network
+            - traefik.http.routers.vocard-dashboard.rule=Host(`music.caikovsky.cloud`)
+            - traefik.http.routers.vocard-dashboard.entrypoints=web
+            - traefik.http.routers.vocard-dashboard.middlewares=redirect-to-https
+            - traefik.http.routers.vocard-dashboard-secure.rule=Host(`music.caikovsky.cloud`)
+            - traefik.http.routers.vocard-dashboard-secure.entrypoints=websecure
+            - traefik.http.routers.vocard-dashboard-secure.tls.certresolver=letsencrypt
+            - traefik.http.services.vocard-dashboard.loadbalancer.server.port=8000
 
     vocard:
         container_name: vocard
