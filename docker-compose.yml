@@ -29,10 +29,12 @@ services:
         expose:
             - "2333"
         healthcheck:
-            test: wget --no-verbose --header='Authorization: youshallnotpass' --tries=1 --spider http://127.0.0.1:2333 || exit 1
-            interval: 10s
-            timeout: 5s
-            retries: 5
+            # We wrap the whole line in single quotes ' ' so YAML ignores the colon inside
+            test: 'wget --no-verbose --header="Authorization: youshallnotpass" --tries=1 --spider http://127.0.0.1:2333 || exit 1'
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
 
     spotify-tokener:
         image: ghcr.io/topi314/spotify-tokener:master
