@@ -8,11 +8,11 @@ name: vocard
 services:
     lavalink:
         container_name: lavalink
-        # image: ghcr.io/lavalink-devs/lavalink:latest
+        image: ghcr.io/lavalink-devs/lavalink:latest
         # Use build to run Lavalink on the latest JRE 23 version (for better performance)
-        build:
-            context: ./lavalink
-            dockerfile: ./Dockerfile-lavalink
+        # build:
+            # context: ./lavalink
+            # dockerfile: ./Dockerfile-lavalink
         restart: unless-stopped
         environment:
             - _JAVA_OPTIONS=-Xmx1G
