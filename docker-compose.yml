@@ -28,11 +28,11 @@ services:
             - vocard
         expose:
             - "2333"
-        healthcheck:
-            test: wget --no-verbose --tries=1 --spider http://127.0.0.1:2333 || exit 1
-            interval: 10s
-            timeout: 5s
-            retries: 5
+        # healthcheck:
+        #     test: wget --no-verbose --tries=1 --spider http://127.0.0.1:2333 || exit 1
+        #     interval: 10s
+        #     timeout: 5s
+        #     retries: 5
 
     spotify-tokener:
         image: ghcr.io/topi314/spotify-tokener:master
@@ -109,7 +109,7 @@ services:
             - vocard
         depends_on:
             lavalink:
-                condition: service_healthy
+                condition: service_started
             vocard-dashboard:
                 condition: service_started
             vocard-db:
