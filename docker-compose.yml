@@ -1,126 +1,132 @@
-# ------------------------------------------------------------------------------------------------------------ #
-
-# For installation instructions please visit - https://docs.vocard.xyz/latest/bot/setup/docker-linux/
-# or for Windows Docker - https://docs.vocard.xyz/latest/bot/setup/docker-windows/
-
-# ------------------------------------------ THANK YOU FOR READING! ------------------------------------------ #
+version: "3.9"
 name: vocard
-services:
-    lavalink:
-        container_name: lavalink
-        image: ghcr.io/lavalink-devs/lavalink:latest
-        # Use build to run Lavalink on the latest JRE 23 version (for better performance)
-        # build:
-            # context: ./lavalink
-            # dockerfile: ./Dockerfile-lavalink
-        restart: unless-stopped
-        environment:
-            - _JAVA_OPTIONS=-Xmx1G
-            - SERVER_PORT=2333
-            # there is no point in changing the password here, since the container is available only in docker network
-            - LAVALINK_SERVER_PASSWORD=youshallnotpass # Change password if needed (don't forget to change it in healthcheck below and settings.json)
-            - PLUGINS_YOUTUBE_OAUTH_ENABLED=true
-            - PLUGINS_YOUTUBE_OAUTH_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
-            - PLUGINS_YOUTUBE_OAUTH_SKIPINITIALIZATION=true
-        volumes:
-            - ./lavalink/application.yml:/opt/Lavalink/application.yml
-        networks:
-            - vocard
-        expose:
-            - "2333"
-        healthcheck:
-            # We wrap the whole line in single quotes ' ' so YAML ignores the colon inside
-            test: 'wget --no-verbose --header="Authorization: youshallnotpass" --tries=1 --spider http://127.0.0.1:2333 || exit 1'
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 30s
-
-    spotify-tokener:
-        image: ghcr.io/topi314/spotify-tokener:master
-        container_name: spotify-tokener
-        restart: unless-stopped
-        environment:
-            - SPOTIFY_TOKENER_ADDR=0.0.0.0:49152
-        networks:
-            - vocard
-        ports:
-            - 49152:49152
-        healthcheck:
-            test: nc -z -v localhost 49152
-            interval: 10s
-            timeout: 5s
-            retries: 5
-        
-    vocard-db:
-       container_name: vocard-db
-       image: mongo:8
-       restart: unless-stopped
-       volumes:
-           - ./data/mongo/db:/data/db
-           - ./data/mongo/conf:/data/configdb
-       environment:
-           - MONGO_INITDB_ROOT_USERNAME=admin # For your MongoDB URL use "mongodb://admin:admin@vocard-db:27017"
-           - MONGO_INITDB_ROOT_PASSWORD=admin
-       expose:
-           - "27017"
-       networks:
-           - vocard
-       command: ["mongod", "--oplogSize=1024", "--wiredTigerCacheSizeGB=1", "--auth", "--noscripting"]
-       healthcheck:
-            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 10s
-
-    vocard-dashboard: 
-        container_name: vocard-dashboard
-        image: ghcr.io/chocomeow/vocard-dashboard:latest
-        restart: unless-stopped
-        volumes:
-            - ../files/dashboard/settings.json:/app/settings.json
-        ports:
-            - 8000:8000
-        networks:
-            - vocard
-            - web
-            - dokploy-network
-        labels:
-            - traefik.enable=true
-            - traefik.docker.network=dokploy-network
-            - traefik.http.routers.vocard-dashboard.rule=Host(`music.caikovsky.cloud`)
-            - traefik.http.routers.vocard-dashboard.entrypoints=web
-            - traefik.http.routers.vocard-dashboard.middlewares=redirect-to-https
-            - traefik.http.routers.vocard-dashboard-secure.rule=Host(`music.caikovsky.cloud`)
-            - traefik.http.routers.vocard-dashboard-secure.entrypoints=websecure
-            - traefik.http.routers.vocard-dashboard-secure.tls.certresolver=letsencrypt
-            - traefik.http.services.vocard-dashboard.loadbalancer.server.port=8000
-
-    vocard:
-        container_name: vocard
-        restart: unless-stopped
-        image: ghcr.io/chocomeow/vocard:latest
-        volumes:
-            - type: bind
-              source: ../files/settings.json
-              target: /app/settings.json
-              bind:
-                create_host_path: false
-        networks:
-            - vocard
-        depends_on:
-            lavalink:
-                condition: service_started
-            vocard-dashboard:
-                condition: service_started
-            vocard-db:
-                condition: service_healthy
 
 networks:
-    vocard:
-        name: vocard
-    web:
-        name: web
-    dokploy-network:
-        external: true
+  vocard:
+    external: true   # create as overlay + attachable (see commands below)
+  web:
+    external: true
+  dokploy-network:
+    external: true
+
+# Tip: create secrets later for DB creds; left as env for parity with your file.
+
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:latest
+    # Swarm ignores container_name
+    environment:
+      - _JAVA_OPTIONS=-Xmx1G
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=youshallnotpass
+      - PLUGINS_YOUTUBE_OAUTH_ENABLED=true
+      - PLUGINS_YOUTUBE_OAUTH_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
+      - PLUGINS_YOUTUBE_OAUTH_SKIPINITIALIZATION=true
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+    networks:
+      - vocard
+    # In Swarm, publish only if you need external access; internal DNS is enough for vocard.
+    # ports: []   # none, dashboard speaks to it over the vocard network
+    healthcheck:
+      # NOTE: your original test URL looked swapped; typical is host:port/path
+      test: ["CMD-SHELL", "wget --no-verbose --header='Authorization: youshallnotpass' --tries=1 --spider http://127.0.0.1:2333/v4/info || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      replicas: 1
+      restart_policy: { condition: on-failure, delay: 5s, max_attempts: 10 }
+      update_config: { order: start-first, parallelism: 1, delay: 5s }
+
+  spotify-tokener:
+    image: ghcr.io/topi314/spotify-tokener:master
+    environment:
+      - SPOTIFY_TOKENER_ADDR=0.0.0.0:49152
+    networks:
+      - vocard
+    ports:
+      - target: 49152
+        published: 49152
+        protocol: tcp
+        mode: ingress
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 49152"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      restart_policy: { condition: on-failure }
+      update_config: { order: start-first, parallelism: 1 }
+
+  vocard-db:
+    image: mongo:8
+    command: ["mongod", "--oplogSize=1024", "--wiredTigerCacheSizeGB=1", "--auth", "--noscripting"]
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=admin
+    volumes:
+      - ./data/mongo/db:/data/db
+      - ./data/mongo/conf:/data/configdb
+    networks:
+      - vocard
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'db.runCommand({ping:1}).ok' | mongosh localhost:27017/test --quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      replicas: 1
+      # Pin Mongo to this node so the bind mount is valid (replace hostname if needed)
+      placement:
+        constraints:
+          - node.hostname == srv1076071
+      restart_policy: { condition: on-failure }
+      update_config: { order: stop-first, parallelism: 1 }
+
+  vocard-dashboard:
+    image: ghcr.io/chocomeow/vocard-dashboard:latest
+    volumes:
+      - ../files/dashboard/settings.json:/app/settings.json:ro
+    networks:
+      - vocard
+      - web
+      - dokploy-network
+    ports:
+      - target: 8000
+        published: 8000
+        protocol: tcp
+        mode: ingress
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.vocard-dashboard.rule=Host(`music.caikovsky.cloud`)
+      - traefik.http.routers.vocard-dashboard.entrypoints=web
+      - traefik.http.routers.vocard-dashboard.middlewares=redirect-to-https
+      - traefik.http.routers.vocard-dashboard-secure.rule=Host(`music.caikovsky.cloud`)
+      - traefik.http.routers.vocard-dashboard-secure.entrypoints=websecure
+      - traefik.http.routers.vocard-dashboard-secure.tls.certresolver=letsencrypt
+      - traefik.http.services.vocard-dashboard.loadbalancer.server.port=8000
+    deploy:
+      replicas: 1
+      restart_policy: { condition: on-failure }
+      update_config: { order: start-first, parallelism: 1 }
+
+  vocard:
+    image: ghcr.io/chocomeow/vocard:latest
+    volumes:
+      - type: bind
+        source: ../files/settings.json
+        target: /app/settings.json
+        bind:
+          create_host_path: false
+    networks:
+      - vocard
+    # Swarm ignores depends_on. Keep app-level retries or a small wait in entrypoint.
+    deploy:
+      replicas: 1
+      restart_policy: { condition: on-failure }
+      update_config: { order: start-first, parallelism: 1 }
