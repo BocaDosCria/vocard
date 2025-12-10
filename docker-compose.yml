@@ -1,9 +1,8 @@
 version: "3.9"
-name: vocard
 
 networks:
-  vocard:
-    external: true   # create as overlay + attachable (see commands below)
+  vocard-swarm-net:
+    external: true  # create as overlay + attachable (see commands below)
   web:
     external: true
   dokploy-network:
@@ -25,7 +24,7 @@ services:
     volumes:
       - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
     networks:
-      - vocard
+      - vocard-swarm-net
     # In Swarm, publish only if you need external access; internal DNS is enough for vocard.
     # ports: []   # none, dashboard speaks to it over the vocard network
     healthcheck:
@@ -45,7 +44,7 @@ services:
     environment:
       - SPOTIFY_TOKENER_ADDR=0.0.0.0:49152
     networks:
-      - vocard
+      - vocard-swarm-net
     ports:
       - target: 49152
         published: 49152
@@ -71,7 +70,7 @@ services:
       - ./data/mongo/db:/data/db
       - ./data/mongo/conf:/data/configdb
     networks:
-      - vocard
+      - vocard-swarm-net
     healthcheck:
       test: ["CMD-SHELL", "echo 'db.runCommand({ping:1}).ok' | mongosh localhost:27017/test --quiet"]
       interval: 10s
@@ -92,7 +91,7 @@ services:
     volumes:
       - ../files/dashboard/settings.json:/app/settings.json:ro
     networks:
-      - vocard
+      - vocard-swarm-net
       - web
       - dokploy-network
     ports:
@@ -124,7 +123,7 @@ services:
         bind:
           create_host_path: false
     networks:
-      - vocard
+      - vocard-swarm-net
     # Swarm ignores depends_on. Keep app-level retries or a small wait in entrypoint.
     deploy:
       replicas: 1
