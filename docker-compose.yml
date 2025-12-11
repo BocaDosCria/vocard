@@ -3,17 +3,12 @@ version: "3.9"
 networks:
   vocard-swarm-net:
     external: true  # create as overlay + attachable (see commands below)
-  web:
-    external: true
   dokploy-network:
     external: true
-
-# Tip: create secrets later for DB creds; left as env for parity with your file.
 
 services:
   lavalink:
     image: ghcr.io/lavalink-devs/lavalink:latest
-    # Swarm ignores container_name
     environment:
       - _JAVA_OPTIONS=-Xmx1G
       - SERVER_PORT=2333
@@ -21,14 +16,12 @@ services:
       - PLUGINS_YOUTUBE_OAUTH_ENABLED=true
       - PLUGINS_YOUTUBE_OAUTH_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
       - PLUGINS_YOUTUBE_OAUTH_SKIPINITIALIZATION=true
+    # Use Dokploy volume instead of bind
     volumes:
-      - ./lavalink/application.yml:/opt/Lavalink/application.yml:ro
+      - vocard-lavalink-config:/opt/Lavalink
     networks:
       - vocard-swarm-net
-    # In Swarm, publish only if you need external access; internal DNS is enough for vocard.
-    # ports: []   # none, dashboard speaks to it over the vocard network
     healthcheck:
-      # NOTE: your original test URL looked swapped; typical is host:port/path
       test: ["CMD-SHELL", "wget --no-verbose --header='Authorization: youshallnotpass' --tries=1 --spider http://127.0.0.1:2333/v4/info || exit 1"]
       interval: 30s
       timeout: 10s
@@ -36,8 +29,14 @@ services:
       start_period: 30s
     deploy:
       replicas: 1
-      restart_policy: { condition: on-failure, delay: 5s, max_attempts: 10 }
-      update_config: { order: start-first, parallelism: 1, delay: 5s }
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 10
+      update_config:
+        order: start-first
+        parallelism: 1
+        delay: 5s
 
   spotify-tokener:
     image: ghcr.io/topi314/spotify-tokener:master
@@ -57,8 +56,11 @@ services:
       retries: 5
     deploy:
       replicas: 1
-      restart_policy: { condition: on-failure }
-      update_config: { order: start-first, parallelism: 1 }
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+        parallelism: 1
 
   vocard-db:
     image: mongo:8
@@ -66,9 +68,10 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=admin
+    # Use Dokploy volumes instead of bind mounts
     volumes:
-      - ./data/mongo/db:/data/db
-      - ./data/mongo/conf:/data/configdb
+      - vocard-mongo-db:/data/db
+      - vocard-mongo-conf:/data/configdb
     networks:
       - vocard-swarm-net
     healthcheck:
@@ -79,12 +82,11 @@ services:
       start_period: 10s
     deploy:
       replicas: 1
-      # Pin Mongo to this node so the bind mount is valid (replace hostname if needed)
-      placement:
-        constraints:
-          - node.hostname == srv1076071
-      restart_policy: { condition: on-failure }
-      update_config: { order: stop-first, parallelism: 1 }
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: stop-first
+        parallelism: 1
 
   vocard-dashboard:
     image: ghcr.io/chocomeow/vocard-dashboard:latest
@@ -92,13 +94,7 @@ services:
       - ../files/dashboard/settings.json:/app/settings.json:ro
     networks:
       - vocard-swarm-net
-      - web
       - dokploy-network
-    ports:
-      - target: 8000
-        published: 8000
-        protocol: tcp
-        mode: ingress
     labels:
       - traefik.enable=true
       - traefik.docker.network=dokploy-network
@@ -111,8 +107,11 @@ services:
       - traefik.http.services.vocard-dashboard.loadbalancer.server.port=8000
     deploy:
       replicas: 1
-      restart_policy: { condition: on-failure }
-      update_config: { order: start-first, parallelism: 1 }
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+        parallelism: 1
 
   vocard:
     image: ghcr.io/chocomeow/vocard:latest
@@ -124,8 +123,18 @@ services:
           create_host_path: false
     networks:
       - vocard-swarm-net
-    # Swarm ignores depends_on. Keep app-level retries or a small wait in entrypoint.
     deploy:
       replicas: 1
-      restart_policy: { condition: on-failure }
-      update_config: { order: start-first, parallelism: 1 }
+      restart_policy:
+        condition: on-failure
+      update_config:
+        order: start-first
+        parallelism: 1
+
+volumes:
+  vocard-mongo-db:
+    external: true
+  vocard-mongo-conf:
+    external: true
+  vocard-lavalink-config:
+    external: true
