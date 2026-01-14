@@ -30,14 +30,16 @@ or
 
 ## What These Scripts Do
 
-1. **Check Dependencies** - Verifies that Python dependencies are installed
-2. **Check Lavalink Status** - Detects if Lavalink is already running on port 2333
-3. **Start Lavalink** - If not running, starts Lavalink using Docker Compose
-4. **Wait for Ready** - Waits up to 120 seconds for Lavalink to be healthy
-5. **Start Bot** - Launches the Vocard Discord bot (`main.py`)
+1. **Detect Virtual Environment** - Automatically finds and activates your Python venv
+2. **Check Dependencies** - Verifies that Python dependencies are installed
+3. **Check Lavalink Status** - Detects if Lavalink is already running on port 2333
+4. **Start Lavalink** - If not running, starts Lavalink using Docker Compose
+5. **Wait for Ready** - Waits up to 120 seconds for Lavalink to be healthy
+6. **Start Bot** - Launches the Vocard Discord bot (`main.py`)
 
 ## Features
 
+- ✅ **Automatic virtual environment detection** - Finds and activates venv, .venv, env, or .env
 - ✅ Automatic Lavalink detection and startup
 - ✅ Health checks to ensure Lavalink is ready
 - ✅ Colored terminal output for better readability
@@ -75,12 +77,47 @@ LAVALINK_PASSWORD="youshallnotpass"
 MAX_WAIT_TIME=120
 ```
 
+## Virtual Environment Support
+
+The scripts automatically detect and use virtual environments. Supported venv names:
+- `venv`
+- `.venv`
+- `env`
+- `.env`
+
+### Creating a Virtual Environment (Recommended)
+
+If you don't have a virtual environment yet:
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it (Linux/macOS)
+source venv/bin/activate
+
+# Activate it (Windows)
+venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+Once created, the startup scripts will automatically find and use it!
+
 ## Manual Installation
 
 If you prefer to run everything manually:
 
 ### 1. Install Dependencies
 
+**With virtual environment (recommended):**
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Without virtual environment:**
 ```bash
 python3 -m pip install -r requirements.txt
 ```
@@ -99,6 +136,13 @@ java -jar Lavalink.jar
 
 ### 3. Start the Bot
 
+**With virtual environment:**
+```bash
+source venv/bin/activate
+python main.py
+```
+
+**Without virtual environment:**
 ```bash
 python3 main.py
 ```
@@ -113,9 +157,24 @@ python3 main.py
 
 ### "Dependencies might be missing"
 
-Run the installation command:
+**If using virtual environment:**
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**If not using virtual environment:**
 ```bash
 python3 -m pip install -r requirements.txt
+```
+
+### "No module named pip" Error
+
+This means you're using a virtual environment without pip. Create a fresh venv:
+```bash
+python3 -m venv venv --clear
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
 ### "Docker not found"

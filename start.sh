@@ -25,6 +25,36 @@ echo -e "${BLUE}║        Vocard Startup Script          ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════╝${NC}"
 echo ""
 
+# Function to find and activate virtual environment
+find_and_activate_venv() {
+    local venv_paths=("venv" ".venv" "env" ".env")
+    
+    for venv_name in "${venv_paths[@]}"; do
+        if [ -d "$venv_name" ]; then
+            if [ -f "$venv_name/bin/activate" ]; then
+                echo -e "${GREEN}✓ Found virtual environment: $venv_name${NC}"
+                source "$venv_name/bin/activate"
+                echo -e "${GREEN}✓ Virtual environment activated${NC}"
+                return 0
+            fi
+        fi
+    done
+    
+    # Check if already in a venv
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "${GREEN}✓ Already running in virtual environment${NC}"
+        return 0
+    fi
+    
+    echo -e "${YELLOW}⚠ No virtual environment found, using system Python${NC}"
+    echo -e "${YELLOW}  Consider creating one with: python3 -m venv venv${NC}"
+    return 1
+}
+
+# Find and activate venv
+find_and_activate_venv
+echo ""
+
 # Function to check if port is in use
 check_port() {
     nc -z "$LAVALINK_HOST" "$LAVALINK_PORT" 2>/dev/null
@@ -41,14 +71,29 @@ check_lavalink_health() {
 
 # Check if requirements are installed
 echo -e "${CYAN}📦 Checking Python environment...${NC}"
-if ! python3 -c "import discord, voicelink" 2>/dev/null; then
+
+# Determine which Python to use
+if [ -n "$VIRTUAL_ENV" ]; then
+    PYTHON_CMD="python"
+    PIP_CMD="pip"
+else
+    PYTHON_CMD="python3"
+    PIP_CMD="pip3"
+fi
+
+if ! $PYTHON_CMD -c "import discord, voicelink" 2>/dev/null; then
     echo -e "${YELLOW}⚠ Dependencies might be missing${NC}"
-    echo -e "  Run: python3 -m pip install -r requirements.txt"
+    if [ -n "$VIRTUAL_ENV" ]; then
+        echo -e "  Run: pip install -r requirements.txt"
+    else
+        echo -e "  Run: python3 -m pip install -r requirements.txt"
+    fi
     echo ""
     read -p "Install dependencies now? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        python3 -m pip install -r requirements.txt
+        $PYTHON_CMD -m pip install -r requirements.txt
+        echo -e "${GREEN}✓ Dependencies installed${NC}"
     else
         echo -e "${RED}✗ Please install dependencies before continuing${NC}"
         exit 1
@@ -115,4 +160,4 @@ echo -e "${CYAN}🤖 Starting Vocard Discord Bot...${NC}"
 echo -e "${BLUE}═══════════════════════════════════════════════════${NC}"
 echo ""
 
-python3 main.py
+$PYTHON_CMD main.py
