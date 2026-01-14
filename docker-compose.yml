@@ -20,8 +20,8 @@ services:
             # there is no point in changing the password here, since the container is available only in docker network
             - LAVALINK_SERVER_PASSWORD=youshallnotpass # Change password if needed (don't forget to change it in healthcheck below and settings.json)
             - PLUGINS_YOUTUBE_OAUTH_ENABLED=true
-            # - PLUGINS_YOUTUBE_OAUTH_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
-            - PLUGINS_YOUTUBE_OAUTH_SKIPINITIALIZATION=false
+            - PLUGINS_YOUTUBE_OAUTH_REFRESH_TOKEN=${YOUTUBE_REFRESH_TOKEN}
+            - PLUGINS_YOUTUBE_OAUTH_SKIPINITIALIZATION=true
         volumes:
             - ./lavalink/application.yml:/opt/Lavalink/application.yml
         networks:
