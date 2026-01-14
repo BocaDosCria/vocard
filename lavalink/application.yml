@@ -13,10 +13,6 @@ plugins:
     # Clients are queried in the order they are given (so the first client is queried first and so on...)
     remoteCipher:
       url: "https://cipher.kikkia.dev/"
-    
-    oauth:
-      enabled: true
-      refreshToken: ${YOUTUBE_REFRESH_TOKEN}
       
     clients:
       - MUSIC
